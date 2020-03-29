@@ -1,0 +1,44 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style type="text/css">
+        * {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="box" v-trag style="width: 100px; height: 100px; background: #00B7EE;"></div>
+    </div>
+</body>
+<script src="https://cdn.bootcss.com/vue/2.5.17-beta.0/vue.min.js"></script>
+<script type="text/javascript">
+    (function() {
+        Vue.directive('trag', (el, binding) => {
+            el.style.position ='absolute';
+            el.onmousedown = function(e) {
+                var startX = e.clientX - el.offsetLeft;
+                var startY = e.clientY - el.offsetTop;
+                document.onmousemove = function(e) {
+                    var endX = e.clientX - startX;
+                    var endY = e.clientY- startY;
+                    el.style.left = endX  + 'px';
+                    el.style.top = endY  + 'px';
+                }
+                document.onmouseup = function() {
+                    document.onmousemove = null;
+                    document.onmouseup = null;
+                }
+            }
+        })
+        var vm = new Vue({
+            el: '#app'
+        })
+    })()
+</script>
+</html>

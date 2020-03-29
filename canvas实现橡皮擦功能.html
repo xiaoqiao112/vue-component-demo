@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+  <style type="text/css">
+    #canvas {
+      margin: 0 auto;
+    }
+
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" width="200" height="100"></canvas>
+</body>
+<script type="text/javascript">
+  var oCanvas = document.getElementById("canvas");
+  var width = oCanvas.width;
+  var height = oCanvas.height;
+  //上下文--画笔
+  var context = oCanvas.getContext("2d");
+
+  //绘制背景
+  context.fillStyle = '#75CDF9'
+  context.fillRect(0, 0, width, height);
+
+  //绘制矩形
+  context.fillStyle = 'hotpink';
+  context.fillRect(0, 0, 80, 80);
+  context.globalCompositeOperation = 'destination-out';
+
+  //清空画布
+  //橡皮
+  oCanvas.onmousedown = function (e) {
+
+    oCanvas.onmousemove = function (e) {
+
+      var wid = e.offsetX;
+      var hei = e.offsetY;
+      console.log(wid);
+      console.log(hei);
+      //context.clearRect(wid-10, hei-10, 20, 20);
+      context.beginPath();
+      context.arc(wid, hei, 10, 0, 2 * Math.PI);
+      context.closePath();
+      context.fillStyle = 'white';
+      context.fill();
+
+    }
+
+  }
+  oCanvas.onmouseup = function () {
+    oCanvas.onmousemove = "null";
+  }
+
+  oRes.onclick = function () {
+    context.fillStyle = '#75CDF9'
+    context.fillRect(0, 0, width, height);
+
+    //绘制矩形
+    context.fillStyle = 'hotpink';
+    context.fillRect(0, 0, 80, 80);
+  }
+
+</script>
+
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>DrawingBoard</title>
+
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+</head>
+
+<body>
+  选择画笔颜色：<input type="color" id="color" />
+  选择画笔类型：画笔<input type="radio" name="way" value="hb" checked="true" />
+  ，橡皮擦<input type="radio" name="way" value="xp" />
+  <br>
+  <canvas id="oriCanvas"></canvas>
+  <canvas id="dstCanvas"></canvas>
+</body>
+
+<script>
+  // --------- 加载图像 ----------
+  var oriCanvas = document.getElementById("oriCanvas");
+  var dstCanvas = document.getElementById("dstCanvas");
+  var dstCtx = dstCanvas.getContext("2d");
+  var oriCtx = oriCanvas.getContext("2d");
+
+  var image = new Image();
+  image.src = "./src/assets/img/car.png";
+
+  image.onload = function () {
+    dstCanvas.width = this.width;
+    dstCanvas.height = this.height;
+    dstCtx.drawImage(this, 0, 0);
+
+    oriCanvas.width = this.width;
+    oriCanvas.height = this.height;
+    oriCtx.drawImage(this, 0, 0);
+  }
+  // --------- 加载图像 ----------
+  // --------- 画笔和橡皮擦功能实现 -------------
+  var flag = false; // 记录鼠标按下和抬起时间  标记画笔是否开始工作
+  var isXp = false; // 记录画笔是橡皮还是画笔
+  var lineWidth = 50; // 设置画笔粗细
+
+  // 设置画笔颜色
+  var theColor = document.getElementById("color");
+  theColor.onchange = function () {
+    dstCtx.strokeStyle = this.value;
+  }
+
+  $('input[type=radio][name=way]').change(function () {
+    if (this.value == 'xp') {
+      isXp = true;
+    } else if (this.value == 'hb') {
+      isXp = false;
+    }
+  });
+
+  dstCanvas.onmousedown = function (eva) {
+    var eva = eva || window.event;
+    dstCtx.lineCap = "round";
+    dstCtx.lineJoin = "round";
+    var x = eva.offsetX;
+    var y = eva.offsetY;
+    dstCtx.beginPath();
+    dstCtx.moveTo(x, y);
+    flag = true;
+
+    dstCtx.lineWidth = lineWidth;
+    dstCtx.strokeStyle = document.getElementById("color").value;
+  }
+  dstCanvas.onmousemove = function (eva) {
+    if (flag) {
+      if (isXp) {
+        var w = lineWidth;
+        let pxs = oriCtx.getImageData(eva.offsetX - w / 2, eva.offsetY - w / 2, w, w);
+        dstCtx.putImageData(pxs, eva.offsetX - w / 2, eva.offsetY - w / 2);
+      } else {
+        var eva = eva || window.event;
+        var x = eva.offsetX;
+        var y = eva.offsetY;
+        dstCtx.lineTo(x, y);
+        dstCtx.stroke();
+      }
+    }
+  }
+
+  dstCanvas.onmouseup = function () {
+    flag = false;
+    dstCtx.closePath();
+  }
+  dstCanvas.onmouseleave = function () {
+    flag = false;
+    dstCtx.closePath();
+  }
+
+  // --------- 画笔和橡皮擦功能实现 -------------
+
+</script>
+
+</html>

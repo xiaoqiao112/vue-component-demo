@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>智绘画板</title>
+  <link rel="shortcut icon" href="./src/assets/image/favicon.png" type="image/x-icon">
+</head>
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  *::before {
+    box-sizing: border-box;
+  }
+
+  *::after {
+    box-sizing: border-box;
+  }
+
+  ul {
+    padding: 0;
+  }
+
+  li {
+    list-style: none;
+  }
+
+  .clearfix::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+
+  .tools {
+    position: fixed;
+    left: 0;
+    bottom: 30px;
+    width: 100%;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .tools .container {
+    padding: 8px 20px;
+    border-radius: 40px;
+    box-shadow: 0 1px 2px 0 rgba(32, 33, 36, 0.28);
+    background: #fff;
+  }
+
+  .tools button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    outline: none;
+    background-size: 20px 20px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    margin: 0 6px;
+    transition: 0.3s;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+
+  .tools button.brush {
+    background-image: url('./src/assets/image/pen.png');
+  }
+
+  .tools button.undo {
+    background-image: url('./src/assets/image/undo_sel.png');
+  }
+
+  .tools button.redo {
+    background-image: url('./src/assets/image/redo_sel.png');
+  }
+
+  .tools button.undo.active {
+    background-image: url('./src/assets/image/undo.png');
+    border-color: transparent;
+  }
+
+  .tools button.redo.active {
+    background-image: url('./src/assets/image/redo.png');
+    border-color: transparent;
+  }
+
+  .tools button.active {
+    border-radius: 5px;
+    border-color: #1398E6;
+  }
+
+  .closeBtn,
+  .pen-detail .closeBtn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: url('./src/assets/image/close.png') center center no-repeat;
+    cursor: pointer;
+  }
+
+  .pen-detail {
+    display: none;
+    position: fixed;
+    left: 50%;
+    margin-left: -140px;
+    bottom: 90px;
+    width: 280px;
+    height: 210px;
+    padding: 20px 24px;
+    border: 1px solid #81A4BD;
+    border-radius: 5px;
+    color: #808FA2;
+    font-style: 18px;
+    background: #fff;
+    font-size: 14px;
+  }
+
+  .pen-detail.active {
+    display: block;
+  }
+
+  .pen-detail p {
+    margin-top: 2px;
+    margin-bottom: 4px;
+  }
+
+  .circle-box {
+    line-height: 24px;
+  }
+
+  .circle-box {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    text-align: center;
+    margin-right: 8px;
+  }
+
+  #thickness {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-left: -1px;
+    margin-top: -1px;
+    background: #000;
+    border-radius: 50%;
+    transform-origin: center;
+    width: 2px;
+    height: 2px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 180px;
+    height: 24px;
+    outline: none;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    background-color: #DBDBDB;
+    height: 4px;
+    border-radius: 5px;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #FF4081;
+    cursor: pointer;
+    margin-top: -4px;
+  }
+
+  .pen-color li {
+    position: relative;
+    float: left;
+    list-style: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin: 4px;
+    cursor: pointer;
+  }
+
+  .pen-color li.active::before {
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    content: '';
+    display: block;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: 2px solid #fff;
+    border-radius: 50%;
+  }
+
+  canvas {
+    display: block;
+    background: #fff;
+  }
+
+
+  @media screen and (max-width: 768px) {
+
+    .tools {
+      bottom: 15px;
+    }
+
+    .pen-detail {
+      bottom: 80px;
+    }
+  }
+
+</style>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <div class="tools">
+    <div class="container">
+      <button class="brush active" id="brush" title="画笔"></button>
+      <button class="undo" id="undo" title="撤销"></button>
+      <button class="redo" id="redo" title="再做"></button>
+    </div>
+  </div>
+  <div class="pen-detail" id="penDetail">
+    <i class="closeBtn"></i>
+    <p>笔大小</p>
+    <span class="circle-box"><i id="thickness"></i></span> <input type="range" id="range1" min="1" max="10" value="1">
+    <p>笔颜色</p>
+    <ul class="pen-color clearfix">
+      <li class="color-item active" style="background-color: black;"></li>
+      <li class="color-item" style="background-color: #FF3333;"></li>
+      <li class="color-item" style="background-color: #99CC00;"></li>
+      <li class="color-item" style="background-color: #0066FF;"></li>
+      <li class="color-item" style="background-color: #FFFF33;"></li>
+      <li class="color-item" style="background-color: #33CC66;"></li>
+    </ul>
+  </div>
+  <script>
+    let canvas = document.getElementById('canvas'); // 获取HTML <canvas> 元素的引用。
+    let context = canvas.getContext('2d'); // 获取这个元素的context——图像稍后将在此被渲染
+    let brush = document.getElementById('brush'); // 获取画笔
+    let penDetail = document.getElementById("penDetail"); // 获取画笔
+    let aColorBtn = document.getElementsByClassName("color-item"); // 获取画笔颜色
+    let undo = document.getElementById("undo"); // 撤销(上一步)
+    let redo = document.getElementById("redo"); // 再做(下一步)
+
+
+    let range1 = document.getElementById('range1'); // 获取笔大小
+    let closeBtn = document.querySelectorAll('.closeBtn'); // 关闭按钮
+    let ifPop = false; // 画笔
+    let lWidth = 2;
+
+    listenToUser(); // 监听用户鼠标事件
+
+    // 监听用户鼠标事件
+    function listenToUser() {
+      console.log('监听用户鼠标事件');
+      // 设置画布大小
+      canvas.width = 800;
+      canvas.height = 600;
+      let img = new Image();
+      img.setAttribute("crossOrigin", 'Anonymous');
+      img.src = "https://wos2.58cdn.com.cn/KlMhGfEdKlMK/cbplatform/447069566WechatIMG673.jpeg";
+      img.onload = function () {
+        //将图像绘制到canvas上面
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      // 定义一个变量初始化画笔状态
+      let painting = false;
+      // 记录画笔最后一次的位置
+      let lastPoint = {
+        x: undefined,
+        y: undefined
+      };
+
+      // 鼠标按下事件
+      canvas.onmousedown = function (e) {
+        console.log('鼠标按下事件');
+        painting = true;
+        let x1 = e.clientX;
+        let y1 = e.clientY;
+        lastPoint = {
+          'x': x1,
+          'y': y1
+        }
+      }
+
+      // 鼠标移动事件
+      canvas.onmousemove = function (e) {
+        let x2 = e.clientX;
+        let y2 = e.clientY;
+        if (!painting) {
+          return
+        }
+        let newPoint = {
+          'x': x2,
+          'y': y2
+        };
+        drawLine(lastPoint.x, lastPoint.y, newPoint.x, newPoint.y);
+        lastPoint = newPoint;
+      }
+
+      // 鼠标松开事件
+      canvas.onmouseup = function () {
+        console.log('鼠标松开事件');
+        painting = false;
+        canvasDraw();
+      }
+
+    }
+
+
+    // 画线函数(绘制涂鸦时触发)
+    function drawLine(x1, y1, x2, y2) {
+      console.log('drawLine');
+      context.beginPath();
+      context.lineWidth = lWidth;
+      // 设置线条末端样式。
+      context.lineCap = "round";
+      // 设定线条与线条间接合处的样式
+      context.lineJoin = "round";
+      context.moveTo(x1, y1);
+      context.lineTo(x2, y2);
+      context.stroke();
+      context.closePath();
+    }
+
+    // 点击画笔
+    brush.onclick = function () {
+      console.log('点击画笔====');
+      brush.classList.add('active');
+      if (!ifPop) {
+        // 弹出框
+        penDetail.classList.add('active');
+      } else {
+        penDetail.classList.remove('active');
+      }
+      ifPop = !ifPop;
+    }
+
+    // 实现改变画笔粗细的功能 1-20 放大的倍数 1 10 实际大小呢？ 2-20
+
+    range1.onchange = function () {
+      thickness.style.transform = 'scale(' + (parseInt(range1.value)) + ')';
+      lWidth = parseInt(range1.value * 2);
+    }
+
+    // 改变画笔颜色
+    getColor();
+
+    function getColor() {
+      for (let i = 0; i < aColorBtn.length; i++) {
+        aColorBtn[i].onclick = function (e) {
+          for (let i = 0; i < aColorBtn.length; i++) {
+            aColorBtn[i].classList.remove("active");
+            this.classList.add("active");
+            activeColor = this.style.backgroundColor;
+            console.log(activeColor, typeof activeColor, '画笔颜色');
+            context.fillStyle = activeColor;
+            context.strokeStyle = activeColor;
+          }
+          penDetail.classList.remove('active');
+          ifPop = false;
+        }
+      }
+    }
+
+    // 实现撤销和重做的功能
+    let canvasHistory = [];
+    let step = -1;
+
+    // 绘制方法
+    function canvasDraw() {
+      step++;
+      if (step < canvasHistory.length) {
+        canvasHistory.length = step; // 截断数组
+      }
+      // 添加新的绘制到历史记录
+      canvasHistory.push(canvas.toDataURL());
+      if (step > 0) {
+        undo.classList.add('active');
+      }
+    }
+
+    // 撤销方法
+    function canvasUndo() {
+      console.log('撤销')
+      if (step > 0) {
+        step--;
+        let canvasPic = new Image();
+        canvasPic.src = canvasHistory[step];
+        canvasPic.onload = function () {
+          context.drawImage(canvasPic, 0, 0);
+        }
+        undo.classList.add('active');
+        redo.classList.add('active');
+      } else {
+        undo.classList.remove('active');
+        alert('不能再继续撤销了');
+      }
+    }
+    // 重做方法
+    function canvasRedo() {
+      console.log('重做')
+      if (step < canvasHistory.length - 1) {
+        step++;
+        let canvasPic = new Image();
+        canvasPic.src = canvasHistory[step];
+        console.log(canvasPic.src, '重新绘制1111');
+        canvasPic.onload = function () {
+          console.log('重新绘制222222');
+          context.drawImage(canvasPic, 0, 0);
+          console.log(context, '重新绘制333');
+        }
+        // redo.classList.add('active');
+      } else {
+        redo.classList.remove('active')
+        alert('已经是最新的记录了');
+      }
+    }
+    undo.onclick = function () {
+      console.log(canvasHistory, '数组+++');
+      canvasUndo();
+    }
+    redo.onclick = function () {
+      console.log(canvasHistory, '数组--');
+      canvasRedo();
+    }
+
+
+
+    for (let index = 0; index < closeBtn.length; index++) {
+      closeBtn[index].onclick = function (e) {
+        console.log('closeBtn');
+        let btnParent = e.target.parentElement;
+        btnParent.classList.remove('active');
+      }
+
+    }
+
+    window.onbeforeunload = function () {
+      return "Reload site?";
+    };
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>canvas画布的圆形橡皮檫效果</title>
+  <style>
+    button {
+      width: 30px;
+      height: 30px;
+      border: none;
+      outline: none;
+      background-size: 20px 20px;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-color: #fff;
+      margin: 0 6px;
+      transition: 0.3s;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    button.undo {
+      background-image: url('./src/assets/img/undo_sel.png')
+    }
+
+    button.redo {
+      background-image: url('./src/assets/img/redo_sel.png')
+    }
+
+    button.undo.active {
+      background-image: url('./src/assets/img/undo.png');
+      border-color: transparent
+    }
+
+    button.redo.active {
+      background-image: url('./src/assets/img/redo.png');
+      border-color: transparent;
+    }
+
+    button.clear {
+      background-image: url('./src/assets/img/clear.png');
+    }
+
+    /*设置橡皮擦颜色，默认是白色，即给canvas外面包一层div，div设置背景色即可*/
+    .box-img {
+      background: #000;
+      height: 333px;
+      width: 500px;
+      margin: 0 auto;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="box-img" style="">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div style="display: flex;justify-content: center;">
+    <button class="clear" id="clear" title="清屏"></button>
+    <button class="undo" id="undo" title="撤销"></button>
+    <button class="redo" id="redo" title="再做"></button>
+  </div>
+</body>
+<script>
+  let canvas = document.getElementById('canvas'); // 获取HTML <canvas> 元素的引用。
+  let ctx = canvas.getContext("2d"); // 获取这个元素的context——图像稍后将在此被渲染
+  let img = new Image();
+  //这里直接修改图片的路径
+  img.src = "https://dss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1035415831,1465727770&fm=26&gp=0.jpg";
+  img.setAttribute("crossOrigin", 'Anonymous')
+  img.onload = function () {
+    //设置canvas的宽高
+    canvas.height = img.height;
+    canvas.width = img.width;
+    //将图像绘制到canvas上面
+    ctx.drawImage(img, 0, 0, img.width, img.height);
+    //绑定点击事件，然后通过点击事件获取当前点击区域进行绘制
+    canvas.addEventListener("mousedown", function (e) {
+      console.log('鼠标按下', 1111);
+      //获取到canvas距离窗口左上角的位置
+      let offsetLeft = canvas.getBoundingClientRect().left;
+      let offsetTop = canvas.getBoundingClientRect().top;
+
+      //获取到鼠标距离窗口左上角的
+      let downX = e.clientX - offsetLeft;
+      let downY = e.clientY - offsetTop;
+      generatePixel(downX, downY);
+
+      function mouseMove(event) {
+        console.log('鼠标移动', 2222);
+        let moveX = event.clientX - offsetLeft;
+        let moveY = event.clientY - offsetTop;
+        generatePixel(moveX, moveY);
+      }
+
+      function mouseUp() {
+        console.log('鼠标松开', 3333);
+        canvasDraw();
+        document.removeEventListener("mousemove", mouseMove);
+        document.removeEventListener("mouseup", mouseUp);
+      }
+      document.addEventListener("mousemove", mouseMove);
+      document.addEventListener("mouseup", mouseUp)
+    });
+    //根据坐标位置，生成附近九像素的贴图
+    let num = 50;
+    let r = num / 2;
+
+    function generatePixel(x, y) {
+      function clearArc(x, y, radius) { // radius控制橡皮擦大小(即num/x,x表示大小),可以通过滑动组件设置大小
+        console.log(x, y, radius, '--------');
+        //圆心(x,y)，半径radius
+        for (let i = 0; i <= radius; i++) {
+          var calcWidth = radius - i;
+          var calcHeight = Math.sqrt(radius * radius - calcWidth * calcWidth);
+          var posX = x - calcWidth;
+          var posY = y - calcHeight;
+          var widthX = 2 * calcWidth;
+          var heightY = 2 * calcHeight;
+          ctx.clearRect(posX, posY, widthX, heightY);
+        }
+      }
+      // clearArc(x, y, num / 2);
+      // //如果是在左右边缘，需要绘制两次
+      // if (x + r > canvas.width) {
+      //   clearArc(x - canvas.width, y, num / 2);
+      // }
+      // if (x - r < 0) {
+      //   clearArc(x + canvas.width, y, num / 2);
+      // }
+      clearArc(x, y, 20);
+      //如果是在左右边缘，需要绘制两次
+      if (x + 20 > canvas.width) {
+        clearArc(x - canvas.width, y, 20);
+      }
+      if (x - 20 < 0) {
+        clearArc(x + canvas.width, y, 20);
+      }
+    }
+  };
+
+  let undo = document.getElementById("undo"); // 撤销(上一步)
+  let redo = document.getElementById("redo"); // 再做(下一步)
+  let reSetCanvas = document.getElementById("clear"); // 获取清屏
+
+  // 实现撤销和重做的功能
+  let canvasHistory = [];
+  let step = -1;
+
+  // 撤销方法
+  function canvasUndo() {
+    if (step > 0) {
+      step--;
+      let canvasPic = new Image();
+      canvasPic.src = canvasHistory[step];
+      canvasPic.onload = function () {
+        ctx.drawImage(canvasPic, 0, 0);
+      }
+      undo.classList.add('active');
+      redo.classList.add('active');
+    } else {
+      undo.classList.remove('active');
+      alert('不能再继续撤销了');
+    }
+  };
+
+  // 重做方法
+  function canvasRedo() {
+    if (step < canvasHistory.length - 1) {
+      step++;
+      let canvasPic = new Image();
+      canvasPic.src = canvasHistory[step];
+      canvasPic.onload = function () {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(canvasPic, 0, 0);
+      }
+    } else {
+      redo.classList.remove('active')
+      alert('已经是最新的记录了');
+    }
+  }
+
+  undo.onclick = function () {
+    canvasUndo();
+  }
+  redo.onclick = function () {
+    canvasRedo();
+  }
+
+  // 记录橡皮擦绘制方法
+  function canvasDraw() {
+    step++;
+    if (step < canvasHistory.length) {
+      canvasHistory.length = step; // 截断数组
+    }
+    // 添加新的绘制到历史记录
+    canvasHistory.push(canvas.toDataURL());
+    if (step > 0) {
+      undo.classList.add('active');
+    }
+  }
+
+  // 实现清屏
+  reSetCanvas.onclick = function () {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let img = new Image();
+    img.src = "./src/assets/img/car.png";
+    img.onload = function () {
+      ctx.drawImage(img, 0, 0);
+    }
+    canvasHistory = [];
+    undo.classList.remove('active');
+    redo.classList.remove('active');
+  }
+
+</script>
+
+</html>

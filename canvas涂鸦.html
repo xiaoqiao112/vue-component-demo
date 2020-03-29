@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas涂鸦</title>
+</head>
+<style>
+  .box{
+    width:1239px;
+    height:600px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('./src/assets/img/car.png') no-repeat;
+    background-size: 100% 100%;
+    background-position: center;
+    text-align: center;
+    position: relative;
+  }
+
+  .boxItem, img{
+    width:413px;
+    height:260px;
+  }
+
+  .pen-detail{
+    display: flex;
+    justify-content: center;
+  }
+  .pen-detail p {
+    margin-top: 2px;
+    margin-bottom: 4px;
+  }
+
+  .circle-box {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    text-align: center;
+    margin-right: 8px;
+  }
+
+  #thickness {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-left: -1px;
+    margin-top: -1px;
+    background: #000;
+    border-radius: 50%;
+    transform-origin: center;
+    width: 2px;
+    height: 2px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 180px;
+    height: 24px;
+    outline: none;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    background-color: #DBDBDB;
+    height: 4px;
+    border-radius: 5px;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #FF4081;
+    cursor: pointer;
+    margin-top: -4px;
+  }
+</style>
+<body>
+<div class="box">
+  <!--<div class="boxItem"><img src="https://wos2.58cdn.com.cn/KlMhGfEdKlMK/cbplatform/1233295827082993664" alt=""></div>-->
+  <div class="boxItem">
+    <canvas id="canvas"></canvas>
+  </div>
+  <!--<div class="boxItem"><img src="https://wos2.58cdn.com.cn/KlMhGfEdKlMK/cbplatform/1233285281176666112" alt=""></div>-->
+</div>
+
+<button class="undo" id="undo" title="撤销"></button>
+<button class="redo" id="redo" title="再做"></button>
+
+<div class="pen-detail">
+  <p>笔大小</p>
+  <span class="circle-box"><i id="thickness"></i></span> <input type="range" id="range1" min="1" max="10" value="1">
+</div>
+
+<script>
+  window.onload = function(){
+    let canvas = document.getElementById('canvas'); // 获取HTML <canvas> 元素的引用。
+    let context = canvas.getContext('2d'); // 获取这个元素的context——图像稍后将在此被渲染
+
+    let undo = document.getElementById("undo"); // 撤销(上一步)
+    let redo = document.getElementById("redo"); // 再做(下一步)
+    let range1 = document.getElementById('range1'); // 获取笔大小
+
+    let lWidth = 2;
+    // 实现撤销和重做的功能
+    let canvasHistory = [];
+    let step = -1;
+
+    listenToUser(); // 监听用户鼠标事件
+
+    // 监听用户涂鸦操作
+    function listenToUser() {
+      console.log('监听用户鼠标事件');
+      // 设置画布大小
+      canvas.width = 413;
+      canvas.height = 260;
+      let img = new Image();
+      img.setAttribute("crossOrigin", 'Anonymous');
+      img.src = "https://wos2.58cdn.com.cn/KlMhGfEdKlMK/cbplatform/447069566WechatIMG673.jpeg";
+      img.onload = function () {
+        //将图像绘制到canvas上面
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      // 定义一个变量初始化画笔状态
+      let painting = false;
+      // 记录画笔最后一次的位置
+      let lastPoint = {
+        x: undefined,
+        y: undefined
+      };
+
+      // 鼠标按下事件
+      canvas.onmousedown = function (e) {
+        console.log('鼠标按下事件');
+        painting = true;
+        let x1 = e.clientX;
+        let y1 = e.clientY;
+        lastPoint = {
+          'x': x1,
+          'y': y1
+        }
+      }
+
+      // 鼠标移动事件
+      canvas.onmousemove = function (e) {
+        let x2 = e.clientX;
+        let y2 = e.clientY;
+        if (!painting) {
+          return
+        }
+        let newPoint = {
+          'x': x2,
+          'y': y2
+        };
+        console.log(lastPoint.x, lastPoint.y, newPoint.x, newPoint.y, 99999);
+        drawLine(lastPoint.x, lastPoint.y, newPoint.x, newPoint.y);
+        lastPoint = newPoint;
+      }
+
+      // 鼠标松开事件
+      canvas.onmouseup = function () {
+        console.log('鼠标松开事件');
+        painting = false;
+        canvasDraw();
+      }
+    }
+
+    // 画线函数(绘制涂鸦时触发)
+    function drawLine(x1, y1, x2, y2) {
+      console.log(x1, y1, x2, y2, '获取涂鸦位置====');
+
+      // 画的时候动态修改画布颜色(默认是黑色画笔)
+      context.fillStyle = 'red';
+      context.strokeStyle = 'red';
+
+      context.beginPath();
+      context.lineWidth = lWidth;
+      // 设置线条末端样式。
+      context.lineCap = "round";
+      // 设定线条与线条间接合处的样式
+      context.lineJoin = "round";
+      context.moveTo(x1, y1);
+      context.lineTo(x2, y2);
+      context.stroke();
+      context.closePath();
+    }
+
+    // 绘制方法
+    function canvasDraw() {
+      step++;
+      if (step < canvasHistory.length) {
+        canvasHistory.length = step; // 截断数组
+      }
+      // 添加新的绘制到历史记录
+      canvasHistory.push(canvas.toDataURL());
+      if (step > 0) {
+        undo.classList.add('active');
+      }
+    }
+
+    // 实现改变画笔粗细的功能 1-20 放大的倍数 1 10 实际大小呢？ 2-20
+    range1.onchange = function () {
+      thickness.style.transform = 'scale(' + (parseInt(range1.value)) + ')';
+      lWidth = parseInt(range1.value * 2);
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+  <style>
+    #canvas{
+      border:1px solid #000;
+    }
+    .box{
+      width:1239px;
+      height:600px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: url('./src/assets/img/car.png') no-repeat;
+      background-size: 100% 100%;
+      background-position: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .boxItem, img{
+      width:413px;
+      height:260px;
+    }
+  </style>
+</head>
+<body>
+<div class="box">
+  <div class="boxItem"><img src="https://wos2.58cdn.com.cn/KlMhGfEdKlMK/cbplatform/1233295827082993664" alt=""></div>
+  <div class="boxItem">
+    <canvas id="canvas" width="300" height="300"></canvas>
+  </div>
+  <div class="boxItem"><img src="https://wos2.58cdn.com.cn/KlMhGfEdKlMK/cbplatform/1233285281176666112" alt=""></div>
+</div>
+<button class="undo" id="undo" title="撤销"></button>
+</body>
+</html>
+<script>
+  let canvas = document.getElementById('canvas');
+  let ctx = canvas.getContext('2d');
+
+  // 实现撤销和重做的功能
+  let canvasHistory = [];
+  let step = -1;
+  let undo = document.getElementById("undo"); // 撤销(上一步)
+
+  // 设置画布大小
+  canvas.width = 413;
+  canvas.height = 260;
+  let img = new Image();
+  img.setAttribute("crossOrigin", 'Anonymous');
+  img.src = "https://wos2.58cdn.com.cn/KlMhGfEdKlMK/cbplatform/447069566WechatIMG673.jpeg";
+  img.onload = function () {
+    //将图像绘制到canvas上面
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+
+  canvas.onmousedown = function(ev){
+    let x = ev.clientX - this.offsetLeft;
+    let y = ev.clientY - this.offsetTop;
+    // 画的时候动态修改画布颜色(默认是黑色画笔)
+    ctx.fillStyle = 'red';
+    ctx.strokeStyle = 'red';
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    canvas.onmousemove = function(ev){
+      let targetX = ev.clientX - this.offsetLeft;
+      let targetY = ev.clientY - this.offsetTop;
+
+      ctx.lineWidth = 1;
+      ctx.lineTo(targetX,targetY);
+      ctx.stroke();
+    };
+    canvas.onmouseup = function(){
+      canvas.onmousemove = null;
+      canvas.onmouseup = null;
+      canvasDraw();
+    }
+
+    // 绘制方法
+    function canvasDraw() {
+      step++;
+      if (step < canvasHistory.length) {
+        canvasHistory.length = step; // 截断数组
+      }
+      // 添加新的绘制到历史记录
+      canvasHistory.push(canvas.toDataURL());
+      if (step > 0) {
+        undo.classList.add('active');
+      }
+      console.log(canvasHistory[canvasHistory.length -1], 123);
+    }
+  };
+</script>
